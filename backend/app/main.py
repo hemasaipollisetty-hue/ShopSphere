@@ -43,6 +43,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173"
+        "https://shop-sphere-brown-one.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],

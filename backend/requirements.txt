@@ -6,5 +6,5 @@ python-dotenv
 google-genai
 pypdf
 ollama
-pwdlib
+pwdlib[argon2]
 email-validator

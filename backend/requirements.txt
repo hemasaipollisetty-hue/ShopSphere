@@ -7,3 +7,4 @@ google-genai
 pypdf
 ollama
 pwdlib
+email-validator

@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-const API = "https://shopsphere-backend-ihnb.onrender.com";
+const API = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8001").replace(/\/$/, "");
+
+const normalizeUser = (value) => {
+  if (!value) return null;
+  if (value.user && typeof value.user === "object") {
+    return value.user;
+  }
+  return value;
+};
 
 function App() {
   // ============================================================
@@ -17,7 +25,9 @@ function App() {
 
   const [user, setUser] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("shopsphere_user")) || null;
+      return normalizeUser(
+        JSON.parse(localStorage.getItem("shopsphere_user")) || null
+      );
     } catch {
       return null;
     }
@@ -27,7 +37,15 @@ function App() {
   // AUTH MODALS
   // ============================================================
 
-  const [showLogin, setShowLogin] = useState(false);
+  const [showLogin, setShowLogin] = useState(() => {
+    try {
+      return !normalizeUser(
+        JSON.parse(localStorage.getItem("shopsphere_user") || "null")
+      );
+    } catch {
+      return true;
+    }
+  });
   const [showRegister, setShowRegister] = useState(false);
 
   const [loginData, setLoginData] = useState({
@@ -142,8 +160,11 @@ function App() {
       setCart([]);
       setOrders([]);
       setAddresses([]);
+      setShowLogin(true);
       return;
     }
+
+    setShowLogin(false);
 
     loadCart();
     loadOrders();
@@ -602,12 +623,18 @@ const checkout = () => {
         );
       }
 
+      const loggedUser = normalizeUser(data);
+
+      if (!loggedUser || !loggedUser.id) {
+        throw new Error("Invalid login response from server.");
+      }
+
       localStorage.setItem(
         "shopsphere_user",
-        JSON.stringify(data)
+        JSON.stringify(loggedUser)
       );
 
-      setUser(data);
+      setUser(loggedUser);
 
       setLoginData({
         email: "",
@@ -686,6 +713,7 @@ const checkout = () => {
     setShowProfile(false);
     setShowAddresses(false);
     setShowCheckout(false);
+    setShowLogin(true);
 
     alert("Logged out successfully.");
   };
@@ -1085,36 +1113,42 @@ const checkout = () => {
       `${product?.name || ""} ${product?.category || ""}`
         .toLowerCase();
 
-    if (keyword.includes("headphone")) {
-      return "https://loremflickr.com/500/400/wireless,headphones?lock=101";
+    if (
+      keyword.includes("headphone") ||
+      keyword.includes("wireless headphones")
+    ) {
+      return "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80";
     }
 
-    if (keyword.includes("watch")) {
-      return "https://loremflickr.com/500/400/smartwatch?lock=102";
+    if (
+      keyword.includes("smart watch") ||
+      keyword.includes("watch")
+    ) {
+      return "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=80";
     }
 
     if (keyword.includes("phone")) {
-      return "https://loremflickr.com/500/400/smartphone?lock=103";
+      return "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80";
     }
 
     if (keyword.includes("laptop")) {
-      return "https://loremflickr.com/500/400/laptop?lock=104";
+      return "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=80";
     }
 
     if (keyword.includes("shoe")) {
-      return "https://loremflickr.com/500/400/shoes?lock=105";
+      return "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80";
     }
 
     if (keyword.includes("shirt")) {
-      return "https://loremflickr.com/500/400/shirt?lock=106";
+      return "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80";
     }
 
     if (keyword.includes("beauty")) {
-      return "https://loremflickr.com/500/400/cosmetics?lock=107";
+      return "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=900&q=80";
     }
 
     if (keyword.includes("grocery")) {
-      return "https://loremflickr.com/500/400/grocery?lock=108";
+      return "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80";
     }
 
     return "https://loremflickr.com/500/400/shopping,product?lock=999";
@@ -1277,6 +1311,210 @@ const checkout = () => {
   // ============================================================
   // RENDER
   // ============================================================
+
+  if (!user) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background:
+            "linear-gradient(135deg, #fff7f0 0%, #fff 45%, #fff4f8 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "30px 20px",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            maxWidth: "420px",
+            background: "#ffffff",
+            border: "1px solid #f0d9c8",
+            borderRadius: "22px",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.08)",
+            padding: "30px 24px",
+          }}
+        >
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: "34px",
+              fontWeight: "800",
+              marginBottom: "8px",
+            }}
+          >
+            Shop<span style={{ color: "#ff4f9a" }}>Sphere</span>
+          </div>
+
+          <p
+            style={{
+              textAlign: "center",
+              color: "#666",
+              marginBottom: "18px",
+            }}
+          >
+            Login to continue shopping
+          </p>
+
+          {!showRegister ? (
+            <form onSubmit={login}>
+              <div style={{ display: "grid", gap: "14px" }}>
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={loginData.email}
+                  onChange={(event) =>
+                    setLoginData({
+                      ...loginData,
+                      email: event.target.value,
+                    })
+                  }
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid #e9d7c5",
+                    fontSize: "15px",
+                  }}
+                />
+
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={loginData.password}
+                  onChange={(event) =>
+                    setLoginData({
+                      ...loginData,
+                      password: event.target.value,
+                    })
+                  }
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid #e9d7c5",
+                    fontSize: "15px",
+                  }}
+                />
+
+                <button
+                  type="submit"
+                  className="primary-btn"
+                  style={{
+                    width: "100%",
+                    justifyContent: "center",
+                  }}
+                >
+                  Login
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={register}>
+              <div style={{ display: "grid", gap: "14px" }}>
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  value={registerData.name}
+                  onChange={(event) =>
+                    setRegisterData({
+                      ...registerData,
+                      name: event.target.value,
+                    })
+                  }
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid #e9d7c5",
+                    fontSize: "15px",
+                  }}
+                />
+
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={registerData.email}
+                  onChange={(event) =>
+                    setRegisterData({
+                      ...registerData,
+                      email: event.target.value,
+                    })
+                  }
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid #e9d7c5",
+                    fontSize: "15px",
+                  }}
+                />
+
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={registerData.password}
+                  onChange={(event) =>
+                    setRegisterData({
+                      ...registerData,
+                      password: event.target.value,
+                    })
+                  }
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid #e9d7c5",
+                    fontSize: "15px",
+                  }}
+                />
+
+                <button
+                  type="submit"
+                  className="primary-btn"
+                  style={{
+                    width: "100%",
+                    justifyContent: "center",
+                  }}
+                >
+                  Create Account
+                </button>
+              </div>
+            </form>
+          )}
+
+          <p
+            style={{
+              marginTop: "18px",
+              textAlign: "center",
+              color: "#555",
+            }}
+          >
+            {!showRegister ? "Don't have an account?" : "Already have an account?"}{" "}
+            <button
+              type="button"
+              onClick={() => setShowRegister((value) => !value)}
+              style={{
+                border: "none",
+                background: "transparent",
+                color: "#ff6b00",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              {!showRegister ? "Register" : "Login"}
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
@@ -1999,422 +2237,241 @@ const checkout = () => {
             Your Cart
           </h2>
 
-          {!user ? (
-            <div
-              style={{
-                background: "#fff",
-                padding: "40px",
-                borderRadius: "12px",
-                textAlign: "center",
-              }}
-            >
-              <p>
-                Please login to view your
-                cart.
-              </p>
-
-              <button
-                className="primary-btn"
-                onClick={() =>
-                  setShowLogin(true)
-                }
-              >
-                Login
-              </button>
-            </div>
-          ) : cart.length === 0 ? (
-            <div
-              style={{
-                background: "#fff",
-                padding: "40px",
-                borderRadius: "12px",
-                textAlign: "center",
-              }}
-            >
+          {user ? (
+            cart.length === 0 ? (
               <div
                 style={{
-                  fontSize: "50px",
-                  marginBottom: "15px",
+                  background: "#fff",
+                  padding: "40px",
+                  borderRadius: "12px",
+                  textAlign: "center",
                 }}
               >
-                🛒
+                <div
+                  style={{
+                    fontSize: "50px",
+                    marginBottom: "15px",
+                  }}
+                >
+                  🛒
+                </div>
+
+                <h3>Your cart is empty</h3>
+
+                <p
+                  style={{
+                    color: "#777",
+                  }}
+                >
+                  Add some products to continue shopping.
+                </p>
+
+                <button
+                  className="primary-btn"
+                  onClick={() => scrollToSection("products")}
+                >
+                  Continue Shopping
+                </button>
               </div>
-
-              <h3>Your cart is empty</h3>
-
-              <p
+            ) : (
+              <div
                 style={{
-                  color: "#777",
+                  display: "grid",
+                  gridTemplateColumns: "1fr 320px",
+                  gap: "25px",
                 }}
               >
-                Add some products to
-                continue shopping.
-              </p>
+                <div>
+                  {cart.map((item) => {
+                    const product = item.product || {};
+                    const price = Number(product.price ?? item.price ?? 0);
+                    const quantity = Number(item.quantity || 1);
 
-              <button
-                className="primary-btn"
-                onClick={() =>
-                  scrollToSection(
-                    "products"
-                  )
-                }
-              >
-                Continue Shopping
-              </button>
-            </div>
-          ) : (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "1fr 320px",
-                gap: "25px",
-              }}
-            >
-              {/* CART ITEMS */}
-
-              <div>
-                {cart.map((item) => {
-                  const product =
-                    item.product || {};
-
-                  const price =
-                    Number(
-                      product.price ??
-                        item.price ??
-                        0
-                    );
-
-                  const quantity =
-                    Number(
-                      item.quantity || 1
-                    );
-
-                  return (
-                    <div
-                      key={item.id}
-                      style={{
-                        background:
-                          "#fff",
-                        border:
-                          "1px solid #eee",
-                        borderRadius:
-                          "12px",
-                        padding: "15px",
-                        marginBottom:
-                          "15px",
-                        display:
-                          "flex",
-                        gap: "15px",
-                        alignItems:
-                          "center",
-                      }}
-                    >
+                    return (
                       <div
+                        key={item.id}
                         style={{
-                          width: "100px",
-                          height: "100px",
-                          flexShrink: 0,
-                          display:
-                            "flex",
-                          alignItems:
-                            "center",
-                          justifyContent:
-                            "center",
-                          background:
-                            "#fff",
+                          background: "#fff",
+                          border: "1px solid #eee",
+                          borderRadius: "12px",
+                          padding: "15px",
+                          marginBottom: "15px",
+                          display: "flex",
+                          gap: "15px",
+                          alignItems: "center",
                         }}
                       >
-                        <img
-                          src={getProductImage(
-                            product
-                          )}
-                          alt={
-                            product.name ||
-                            "Product"
-                          }
-                          style={{
-                            width:
-                              "100%",
-                            height:
-                              "100%",
-                            objectFit:
-                              "contain",
-                          }}
-                          onError={(
-                            event
-                          ) => {
-                            if (
-                              !event.currentTarget
-                                .dataset
-                                .fallback
-                            ) {
-                              event.currentTarget.dataset.fallback =
-                                "true";
-
-                              event.currentTarget.src =
-                                "https://loremflickr.com/500/400/shopping,product?lock=999";
-
-                              return;
-                            }
-
-                            event.currentTarget.style.display =
-                              "none";
-                          }}
-                        />
-                      </div>
-
-                      <div
-                        style={{
-                          flex: 1,
-                        }}
-                      >
-                        <h3
-                          style={{
-                            margin:
-                              "0 0 5px",
-                          }}
-                        >
-                          {product.name ||
-                            "Product"}
-                        </h3>
-
-                        <p
-                          style={{
-                            margin:
-                              "0 0 8px",
-                            color:
-                              "#ff6b00",
-                            fontWeight:
-                              "700",
-                          }}
-                        >
-                          ₹
-                          {price.toLocaleString(
-                            "en-IN"
-                          )}
-                        </p>
-
                         <div
                           style={{
-                            display:
-                              "flex",
-                            alignItems:
-                              "center",
-                            gap: "8px",
+                            width: "100px",
+                            height: "100px",
+                            flexShrink: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "#fff",
                           }}
                         >
-                          <button
-                            className="secondary-btn"
-                            onClick={() =>
-                              updateCartQuantity(
-                                item.id,
-                                quantity -
-                                  1
-                              )
-                            }
-                            disabled={
-                              quantity <=
-                              1
-                            }
-                          >
-                            −
-                          </button>
+                          <img
+                            src={getProductImage(product)}
+                            alt={product.name || "Product"}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "contain",
+                            }}
+                            onError={(event) => {
+                              if (!event.currentTarget.dataset.fallback) {
+                                event.currentTarget.dataset.fallback = "true";
+                                event.currentTarget.src =
+                                  "https://loremflickr.com/500/400/shopping,product?lock=999";
+                                return;
+                              }
+                              event.currentTarget.style.display = "none";
+                            }}
+                          />
+                        </div>
 
+                        <div style={{ flex: 1 }}>
+                          <h3 style={{ margin: "0 0 5px" }}>
+                            {product.name || "Product"}
+                          </h3>
+
+                          <p
+                            style={{
+                              margin: "0 0 8px",
+                              color: "#ff6b00",
+                              fontWeight: "700",
+                            }}
+                          >
+                            ₹{price.toLocaleString("en-IN")}
+                          </p>
+
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <button
+                              className="secondary-btn"
+                              onClick={() => updateCartQuantity(item.id, quantity - 1)}
+                              disabled={quantity <= 1}
+                            >
+                              −
+                            </button>
+
+                            <strong>{quantity}</strong>
+
+                            <button
+                              className="secondary-btn"
+                              onClick={() => updateCartQuantity(item.id, quantity + 1)}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        <div style={{ textAlign: "right" }}>
                           <strong>
-                            {quantity}
+                            ₹{(price * quantity).toLocaleString("en-IN")}
                           </strong>
 
+                          <br />
+
                           <button
                             className="secondary-btn"
-                            onClick={() =>
-                              updateCartQuantity(
-                                item.id,
-                                quantity +
-                                  1
-                              )
-                            }
+                            style={{
+                              marginTop: "8px",
+                              color: "#dc3545",
+                            }}
+                            onClick={() => removeFromCart(item.id)}
                           >
-                            +
+                            Remove
                           </button>
                         </div>
                       </div>
-
-                      <div
-                        style={{
-                          textAlign:
-                            "right",
-                        }}
-                      >
-                        <strong>
-                          ₹
-                          {(
-                            price *
-                            quantity
-                          ).toLocaleString(
-                            "en-IN"
-                          )}
-                        </strong>
-
-                        <br />
-
-                        <button
-                          className="secondary-btn"
-                          style={{
-                            marginTop:
-                              "8px",
-                            color:
-                              "#dc3545",
-                          }}
-                          onClick={() =>
-                            removeFromCart(
-                              item.id
-                            )
-                          }
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* CART SUMMARY */}
-
-              <div
-                style={{
-                  background:
-                    "#fff",
-                  border:
-                    "1px solid #eee",
-                  borderRadius:
-                    "12px",
-                  padding: "22px",
-                  height:
-                    "fit-content",
-                  position:
-                    "sticky",
-                  top: "90px",
-                }}
-              >
-                <h3
-                  style={{
-                    marginTop: 0,
-                  }}
-                >
-                  Order Summary
-                </h3>
-
-                <div
-                  style={{
-                    display:
-                      "flex",
-                    justifyContent:
-                      "space-between",
-                    marginBottom:
-                      "12px",
-                  }}
-                >
-                  <span>
-                    Items
-                  </span>
-
-                  <span>
-                    {cartCount}
-                  </span>
+                    );
+                  })}
                 </div>
 
                 <div
                   style={{
-                    display:
-                      "flex",
-                    justifyContent:
-                      "space-between",
-                    marginBottom:
-                      "12px",
+                    background: "#fff",
+                    border: "1px solid #eee",
+                    borderRadius: "12px",
+                    padding: "22px",
+                    height: "fit-content",
+                    position: "sticky",
+                    top: "90px",
                   }}
                 >
-                  <span>
-                    Subtotal
-                  </span>
+                  <h3 style={{ marginTop: 0 }}>Order Summary</h3>
 
-                  <span>
-                    ₹
-                    {cartTotal.toLocaleString(
-                      "en-IN"
-                    )}
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    display:
-                      "flex",
-                    justifyContent:
-                      "space-between",
-                    marginBottom:
-                      "12px",
-                    color:
-                      "#198754",
-                  }}
-                >
-                  <span>
-                    Delivery
-                  </span>
-
-                  <span>
-                    FREE
-                  </span>
-                </div>
-
-                <hr />
-
-                <div
-                  style={{
-                    display:
-                      "flex",
-                    justifyContent:
-                      "space-between",
-                    margin:
-                      "15px 0",
-                    fontSize:
-                      "20px",
-                    fontWeight:
-                      "700",
-                  }}
-                >
-                  <span>
-                    Total
-                  </span>
-
-                  <span
+                  <div
                     style={{
-                      color:
-                        "#ff6b00",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "12px",
                     }}
                   >
-                    ₹
-                    {cartTotal.toLocaleString(
-                      "en-IN"
-                    )}
-                  </span>
-                </div>
+                    <span>Items</span>
+                    <span>{cartCount}</span>
+                  </div>
 
-                <button
-                  type="button"
-                  className="primary-btn"
-                  style={{
-                    width: "100%",
-                    cursor: "pointer",
-                  }}
-                  onClick={checkout}
-                >
-                  Proceed to Checkout
-                </button>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    <span>Subtotal</span>
+                    <span>₹{cartTotal.toLocaleString("en-IN")}</span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "12px",
+                      color: "#198754",
+                    }}
+                  >
+                    <span>Delivery</span>
+                    <span>FREE</span>
+                  </div>
+
+                  <hr />
+
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      margin: "15px 0",
+                      fontSize: "20px",
+                      fontWeight: "700",
+                    }}
+                  >
+                    <span>Total</span>
+                    <span style={{ color: "#ff6b00" }}>
+                      ₹{cartTotal.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="primary-btn"
+                    style={{ width: "100%", cursor: "pointer" }}
+                    onClick={checkout}
+                  >
+                    Proceed to Checkout
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )
+          ) : null}
         </div>
       </section>
 
@@ -2548,577 +2605,331 @@ const checkout = () => {
             My Orders
           </h2>
 
-          {!user ? (
-            <div
-              style={{
-                background:
-                  "#fff",
-                padding: "40px",
-                borderRadius:
-                  "12px",
-                textAlign:
-                  "center",
-              }}
-            >
-              <p>
-                Please login to view
-                your orders.
-              </p>
-
-              <button
-                className="primary-btn"
-                onClick={() =>
-                  setShowLogin(true)
-                }
-              >
-                Login
-              </button>
-            </div>
-          ) : orders.length === 0 ? (
-            <div
-              style={{
-                background:
-                  "#fff",
-                padding: "40px",
-                borderRadius:
-                  "12px",
-                textAlign:
-                  "center",
-              }}
-            >
+          {user ? (
+            orders.length === 0 ? (
               <div
                 style={{
-                  fontSize:
-                    "50px",
+                  background: "#fff",
+                  padding: "40px",
+                  borderRadius: "12px",
+                  textAlign: "center",
                 }}
               >
-                📦
+                <div style={{ fontSize: "50px" }}>📦</div>
+                <h3>No orders yet</h3>
+                <p style={{ color: "#777" }}>
+                  Your placed orders will appear here.
+                </p>
               </div>
-
-              <h3>
-                No orders yet
-              </h3>
-
-              <p
-                style={{
-                  color:
-                    "#777",
-                }}
-              >
-                Your placed orders
-                will appear here.
-              </p>
-            </div>
-          ) : (
-            <div>
-              {orders.map(
-                (order) => {
-                  const status =
-                    order.status ||
-                    "pending";
-
-                  const trackingIndex =
-                    getTrackingIndex(
-                      status
-                    );
-
-          
-
-                  const payment =
-                    order.payment_method ||
-                    "Not available";
+            ) : (
+              <div>
+                {orders.map((order) => {
+                  const status = order.status || "pending";
+                  const trackingIndex = getTrackingIndex(status);
+                  const payment = order.payment_method || "Not available";
 
                   return (
                     <div
                       key={order.id}
                       style={{
-                        background:
-                          "#fff",
-                        border:
-                          "1px solid #e8e8e8",
-                        borderRadius:
-                          "14px",
-                        padding:
-                          "22px",
-                        marginBottom:
-                          "20px",
-                        boxShadow:
-                          "0 3px 10px rgba(0,0,0,0.04)",
+                        background: "#fff",
+                        border: "1px solid #e8e8e8",
+                        borderRadius: "14px",
+                        padding: "22px",
+                        marginBottom: "20px",
+                        boxShadow: "0 3px 10px rgba(0,0,0,0.04)",
                       }}
                     >
-                      {/* ORDER HEADER */}
-
                       <div
                         style={{
-                          display:
-                            "flex",
-                          justifyContent:
-                            "space-between",
-                          alignItems:
-                            "center",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
                           gap: "10px",
-                          flexWrap:
-                            "wrap",
-                          marginBottom:
-                            "20px",
+                          flexWrap: "wrap",
+                          marginBottom: "20px",
                         }}
                       >
                         <div>
-                          <h3
-                            style={{
-                              margin:
-                                "0 0 5px",
-                            }}
-                          >
-                            Order #
-                            {order.id}
-                          </h3>
-
-                          <span
-                            style={{
-                              color:
-                                "#666",
-                              fontSize:
-                                "13px",
-                            }}
-                          >
-                            {getStatusMessage(
-                              status
-                            )}
+                          <h3 style={{ margin: "0 0 5px" }}>Order #{order.id}</h3>
+                          <span style={{ color: "#666", fontSize: "13px" }}>
+                            {getStatusMessage(status)}
                           </span>
                         </div>
 
                         <span
                           style={{
-                            padding:
-                              "7px 12px",
-                            borderRadius:
-                              "20px",
+                            padding: "7px 12px",
+                            borderRadius: "20px",
                             background:
-                              status ===
-                              "cancelled"
+                              status === "cancelled"
                                 ? "#ffe5e5"
-                                : status ===
-                                  "delivered"
-                                ? "#e8f8ee"
-                                : "#fff2e8",
+                                : status === "delivered"
+                                  ? "#e8f8ee"
+                                  : "#fff2e8",
                             color:
-                              status ===
-                              "cancelled"
+                              status === "cancelled"
                                 ? "#dc3545"
-                                : status ===
-                                  "delivered"
-                                ? "#198754"
-                                : "#ff6b00",
-                            fontWeight:
-                              "700",
-                            fontSize:
-                              "13px",
+                                : status === "delivered"
+                                  ? "#198754"
+                                  : "#ff6b00",
+                            fontWeight: "700",
+                            fontSize: "13px",
                           }}
                         >
-                          {status
-                            .replace(
-                              /_/g,
-                              " "
-                            )
-                            .toUpperCase()}
+                          {status.replace(/_/g, " ").toUpperCase()}
                         </span>
                       </div>
 
-                      {/* ORDER ITEMS */}
-
                       <div
-  style={{
-    padding: "15px 0",
-    borderTop: "1px solid #eee",
-  }}
->
-  <div
-    style={{
-      display: "flex",
-      gap: "15px",
-      alignItems: "center",
-    }}
-  >
-    <div
-      style={{
-        width: "75px",
-        height: "75px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#fff",
-        flexShrink: 0,
-        borderRadius: "8px",
-        overflow: "hidden",
-      }}
-    >
-      <img
-        src={getProductImage({
-          name: order.product_name,
-        })}
-        alt={order.product_name || "Product"}
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "contain",
-        }}
-      />
-    </div>
+                        style={{
+                          padding: "15px 0",
+                          borderTop: "1px solid #eee",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "15px",
+                            alignItems: "center",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "75px",
+                              height: "75px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              background: "#fff",
+                              flexShrink: 0,
+                              borderRadius: "8px",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <img
+                              src={getProductImage({ name: order.product_name })}
+                              alt={order.product_name || "Product"}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "contain",
+                              }}
+                            />
+                          </div>
 
-    <div style={{ flex: 1 }}>
-      <strong
-        style={{
-          display: "block",
-          fontSize: "15px",
-          color: "#222",
-        }}
-      >
-        {order.product_name || "Product"}
-      </strong>
+                          <div style={{ flex: 1 }}>
+                            <strong
+                              style={{
+                                display: "block",
+                                fontSize: "15px",
+                                color: "#222",
+                              }}
+                            >
+                              {order.product_name || "Product"}
+                            </strong>
+                            <div
+                              style={{
+                                fontSize: "13px",
+                                color: "#666",
+                                marginTop: "5px",
+                              }}
+                            >
+                              Quantity: {order.quantity || 1}
+                            </div>
+                          </div>
 
-      <div
-        style={{
-          fontSize: "13px",
-          color: "#666",
-          marginTop: "5px",
-        }}
-      >
-        Quantity: {order.quantity || 1}
-      </div>
-    </div>
-
-    <strong
-      style={{
-        color: "#ff6b00",
-        fontSize: "16px",
-      }}
-    >
-      ₹
-      {Number(
-        order.total_price || 0
-      ).toLocaleString("en-IN")}
-    </strong>
-  </div>
-</div>
-
-                      {/* ORDER INFORMATION */}
+                          <strong
+                            style={{
+                              color: "#ff6b00",
+                              fontSize: "16px",
+                            }}
+                          >
+                            ₹{Number(order.total_price || 0).toLocaleString("en-IN")}
+                          </strong>
+                        </div>
+                      </div>
 
                       <div
                         style={{
-                          display:
-                            "grid",
-                          gridTemplateColumns:
-                            "repeat(auto-fit, minmax(180px, 1fr))",
+                          display: "grid",
+                          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
                           gap: "12px",
-                          marginTop:
-                            "15px",
-                          padding:
-                            "15px",
-                          background:
-                            "#fafafa",
-                          borderRadius:
-                            "10px",
+                          marginTop: "15px",
+                          padding: "15px",
+                          background: "#fafafa",
+                          borderRadius: "10px",
                         }}
                       >
                         <div>
                           <span
                             style={{
-                              display:
-                                "block",
-                              fontSize:
-                                "12px",
-                              color:
-                                "#777",
+                              display: "block",
+                              fontSize: "12px",
+                              color: "#777",
                             }}
                           >
                             Ordered On
                           </span>
-
-                          <strong>
-                            {getOrderDate(
-                              order
-                            )}
-                          </strong>
+                          <strong>{getOrderDate(order)}</strong>
                         </div>
 
                         <div>
                           <span
                             style={{
-                              display:
-                                "block",
-                              fontSize:
-                                "12px",
-                              color:
-                                "#777",
+                              display: "block",
+                              fontSize: "12px",
+                              color: "#777",
                             }}
                           >
                             Expected Delivery
                           </span>
-
-                          <strong>
-                            {getExpectedDeliveryDate(
-                              order
-                            )}
-                          </strong>
+                          <strong>{getExpectedDeliveryDate(order)}</strong>
                         </div>
 
                         <div>
                           <span
                             style={{
-                              display:
-                                "block",
-                              fontSize:
-                                "12px",
-                              color:
-                                "#777",
+                              display: "block",
+                              fontSize: "12px",
+                              color: "#777",
                             }}
                           >
                             Payment Method
                           </span>
-
-                          <strong>
-                            {payment}
-                          </strong>
+                          <strong>{payment}</strong>
                         </div>
 
                         <div>
                           <span
                             style={{
-                              display:
-                                "block",
-                              fontSize:
-                                "12px",
-                              color:
-                                "#777",
+                              display: "block",
+                              fontSize: "12px",
+                              color: "#777",
                             }}
                           >
                             Total
                           </span>
-
-                          <strong
-                            style={{
-                              color:
-                                "#ff6b00",
-                            }}
-                          >
-                            ₹
-                            {Number(
-                              order.total ||
-                                order.total_price ||
-                                0
-                            ).toLocaleString(
-                              "en-IN"
-                            )}
+                          <strong style={{ color: "#ff6b00" }}>
+                            ₹{Number(order.total || order.total_ || 0).toLocaleString("en-IN")}
                           </strong>
                         </div>
                       </div>
 
-                      {/* TRACKING */}
-
-                      {status !==
-                        "cancelled" && (
-                        <div
-                          style={{
-                            marginTop:
-                              "25px",
-                          }}
-                        >
-                          <h4>
-                            Order Tracking
-                          </h4>
+                      {status !== "cancelled" && (
+                        <div style={{ marginTop: "25px" }}>
+                          <h4>Order Tracking</h4>
 
                           <div
                             style={{
-                              display:
-                                "flex",
-                              justifyContent:
-                                "space-between",
-                              position:
-                                "relative",
-                              marginTop:
-                                "25px",
-                              gap:
-                                "5px",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              position: "relative",
+                              marginTop: "25px",
+                              gap: "5px",
                             }}
                           >
-                            {trackingSteps.map(
-                              (
-                                step,
-                                index
-                              ) => {
-                                const completed =
-                                  index <=
-                                  trackingIndex;
+                            {trackingSteps.map((step, index) => {
+                              const completed = index <= trackingIndex;
 
-                                return (
+                              return (
+                                <div
+                                  key={step.key}
+                                  style={{
+                                    flex: 1,
+                                    textAlign: "center",
+                                    position: "relative",
+                                    zIndex: 2,
+                                  }}
+                                >
                                   <div
-                                    key={
-                                      step.key
-                                    }
                                     style={{
-                                      flex: 1,
-                                      textAlign:
-                                        "center",
-                                      position:
-                                        "relative",
-                                      zIndex: 2,
+                                      width: "30px",
+                                      height: "30px",
+                                      margin: "0 auto 8px",
+                                      borderRadius: "50%",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      background: completed ? "#ff6b00" : "#ddd",
+                                      color: completed ? "#fff" : "#777",
+                                      fontSize: "12px",
+                                      fontWeight: "700",
                                     }}
                                   >
-                                    <div
-                                      style={{
-                                        width:
-                                          "30px",
-                                        height:
-                                          "30px",
-                                        margin:
-                                          "0 auto 8px",
-                                        borderRadius:
-                                          "50%",
-                                        display:
-                                          "flex",
-                                        alignItems:
-                                          "center",
-                                        justifyContent:
-                                          "center",
-                                        background:
-                                          completed
-                                            ? "#ff6b00"
-                                            : "#ddd",
-                                        color:
-                                          completed
-                                            ? "#fff"
-                                            : "#777",
-                                        fontSize:
-                                          "12px",
-                                        fontWeight:
-                                          "700",
-                                      }}
-                                    >
-                                      {completed
-                                        ? "✓"
-                                        : index +
-                                          1}
-                                    </div>
-
-                                    <span
-                                      style={{
-                                        fontSize:
-                                          "11px",
-                                        color:
-                                          completed
-                                            ? "#ff6b00"
-                                            : "#777",
-                                        fontWeight:
-                                          completed
-                                            ? "700"
-                                            : "400",
-                                      }}
-                                    >
-                                      {
-                                        step.label
-                                      }
-                                    </span>
+                                    {completed ? "✓" : index + 1}
                                   </div>
-                                );
-                              }
-                            )}
+
+                                  <span
+                                    style={{
+                                      fontSize: "11px",
+                                      color: completed ? "#ff6b00" : "#777",
+                                      fontWeight: completed ? "700" : "400",
+                                    }}
+                                  >
+                                    {step.label}
+                                  </span>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
 
-                      {/* DELIVERY ADDRESS */}
-
                       {order.delivery_address && (
                         <div
                           style={{
-                            marginTop:
-                              "20px",
-                            padding:
-                              "15px",
-                            background:
-                              "#fff7f0",
-                            border:
-                              "1px solid #ffd9bd",
-                            borderRadius:
-                              "10px",
+                            marginTop: "20px",
+                            padding: "15px",
+                            background: "#fff7f0",
+                            border: "1px solid #ffd9bd",
+                            borderRadius: "10px",
                           }}
                         >
-                          <strong>
-                            Delivery Address
-                          </strong>
-
+                          <strong>Delivery Address</strong>
                           <p
                             style={{
-                              margin:
-                                "8px 0 0",
-                              color:
-                                "#555",
-                              lineHeight:
-                                1.5,
+                              margin: "8px 0 0",
+                              color: "#555",
+                              lineHeight: 1.5,
                             }}
                           >
-                            {typeof order.delivery_address ===
-                            "string"
+                            {typeof order.delivery_address === "string"
                               ? order.delivery_address
                               : `${order.delivery_address.name || ""}, ${order.delivery_address.address || ""}, ${order.delivery_address.city || ""}, ${order.delivery_address.state || ""} - ${order.delivery_address.pincode || ""}`}
                           </p>
                         </div>
                       )}
 
-                      {/* ACTION BUTTONS */}
-
                       <div
                         style={{
-                          display:
-                            "flex",
+                          display: "flex",
                           gap: "10px",
-                          marginTop:
-                            "20px",
-                          flexWrap:
-                            "wrap",
+                          marginTop: "20px",
+                          flexWrap: "wrap",
                         }}
                       >
-                        {[
-                          "pending",
-                          "confirmed",
-                          "shipped",
-                        ].includes(
-                          status
-                        ) && (
+                        {["pending", "confirmed", "shipped"].includes(status) && (
                           <button
                             className="secondary-btn"
                             style={{
-                              color:
-                                "#dc3545",
-                              borderColor:
-                                "#dc3545",
+                              color: "#dc3545",
+                              borderColor: "#dc3545",
                             }}
-                            onClick={() =>
-                              cancelOrder(
-                                order.id
-                              )
-                            }
+                            onClick={() => cancelOrder(order.id)}
                           >
                             Cancel Order
                           </button>
                         )}
 
-                        {status ===
-                          "out_for_delivery" && (
+                        {status === "out_for_delivery" && (
                           <button
                             className="secondary-btn"
                             style={{
-                              color:
-                                "#dc3545",
-                              borderColor:
-                                "#dc3545",
+                              color: "#dc3545",
+                              borderColor: "#dc3545",
                             }}
-                            onClick={() =>
-                              deleteOrder(
-                                order.id
-                              )
-                            }
+                            onClick={() => deleteOrder(order.id)}
                           >
                             Delete Order
                           </button>
@@ -3126,10 +2937,10 @@ const checkout = () => {
                       </div>
                     </div>
                   );
-                }
-              )}
-            </div>
-          )}
+                })}
+              </div>
+            )
+          ) : null}
         </div>
       </section>
 
@@ -3145,6 +2956,12 @@ const checkout = () => {
           color: "#fff",
           padding: "35px 30px",
           textAlign: "center",
+          marginLeft: "240px",
+          width: "calc(100% - 240px)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
         <h3

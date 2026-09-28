@@ -15,21 +15,21 @@ ShopSphere is a full-stack e-commerce application built using **React.js, FastAP
 
 ## 🛠️ Tech Stack
 
-Frontend: React.js, JavaScript, CSS
-Backend: Python, FastAPI
-Database: SQLite
-AI: AI-powered support
-Deployment: Vercel, Render
+**Frontend:** React.js, JavaScript, CSS
+**Backend:** Python, FastAPI
+**Database:** SQLite
+**AI:** AI-powered support
+**Deployment:** Vercel, Render
 
 ## 🔗 Links
 
-Live Demo: https://shop-sphere-brown-one.vercel.app/
+**Live Demo:** https://shop-sphere-brown-one.vercel.app/
 
-GitHub: https://github.com/hemasaipollisetty-hue/ShopSphere
+**GitHub:** https://github.com/hemasaipollisetty-hue/ShopSphere
 
 ## 👩‍💻 Role
 
-Full-Stack Developer:
+**Full-Stack Developer**
 
 Developed the frontend, backend APIs, database integration, AI support functionality, and deployment.
 
